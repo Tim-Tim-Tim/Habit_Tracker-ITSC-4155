@@ -1,4 +1,5 @@
 import datetime
+import tkinter as tk
 from typing import Dict, List
 
 
@@ -23,10 +24,11 @@ class Habit:
 
         if self.logs and (today - (self.logs[-1])).days == 1:
             self.streak += 1
-            print(f"Habit '{self.name}' marked complete for {today}.")
         else:
             self.streak = 1
-            self.logs.append(today)
+
+        self.logs.append(today)
+        print(f"Habit '{self.name}' marked complete for {today}.")
 
 
 class HabitTracker:
@@ -67,52 +69,10 @@ class HabitTracker:
     def show_habits(self):
         """This method was added to display all the current habits in the user's profile"""
 
-        print(f"List of current habits -> ")
+        print("List of current habits -> ")
 
         if not self.habits:
             return
 
         for habit in self.habits.values():
             print(f"{habit.name} | Streak: {habit.streak} days")
-
-
-def main():
-    habit_tracker = HabitTracker()
-
-    while True:
-        print("\n--- Habit Tracker ---")
-        print("1. Add habit")
-        print("2. Mark habit complete")
-        print("3. Show habits")
-        print("4. Delete habit")
-        print("5. Quit")
-
-        choice = input("Choose an option: ")
-
-        if choice == "1":
-            name = input("Enter habit name: ")
-            habit_tracker.add_habit(name)
-
-        elif choice == "2":
-            habit_tracker.show_habits()
-            name = input("Enter habit to complete: ")
-            habit_tracker.complete_habit(name)
-
-        elif choice == "3":
-            habit_tracker.show_habits()
-
-        elif choice == "4":
-            habit_tracker.show_habits()
-            name = input("Enter habit to delete: ")
-            habit_tracker.delete_habit(name)
-
-        elif choice == "5":
-            print("Quitting app...")
-            break
-
-        else:
-            print("Invalid choice. Try again.")
-
-
-if __name__ == "__main__":
-    main()

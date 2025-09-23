@@ -118,7 +118,7 @@ class HabitUI:
         self.tracker.show_habits()
 
 
-# Entry point: swap your terminal loop with this
+# Main
 if __name__ == "__main__":
     root = tk.Tk()
     HabitUI(root)

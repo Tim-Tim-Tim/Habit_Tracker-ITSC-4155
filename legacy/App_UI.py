@@ -118,7 +118,7 @@ class HabitUI:
         self.tracker.show_habits()
 
 
-# Main
+# Main, moved from habits core to loop here.
 if __name__ == "__main__":
     root = tk.Tk()
     HabitUI(root)

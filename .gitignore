@@ -1,0 +1,13 @@
+# Node / Vite
+node_modules/
+dist/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+backend/.venv/
+
+# OS
+.DS_Store
+Thumbs.db

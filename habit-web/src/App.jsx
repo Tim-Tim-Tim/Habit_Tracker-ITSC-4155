@@ -13,6 +13,10 @@ function sleep(ms) {
 
 
 function App() {
+  const [habits, setHabits] = useState([]);
+  const [newHabitName, setNewHabitName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Time for silly react queries :,)
   const qc = useQueryClient();

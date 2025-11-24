@@ -1,25 +1,24 @@
-from domain import HabitTracker
-from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
 import datetime
 from datetime import timedelta
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
-from database import engine, Base, get_db
 import models
-
 from auth import (
-    get_password_hash,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
     authenticate_user,
     create_access_token,
     get_current_active_user,
-    get_user_by_username,
+    get_password_hash,
     get_user_by_email,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_user_by_username,
 )
+from database import Base, engine, get_db
+from domain import HabitTracker
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import Session
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -28,7 +27,9 @@ app = FastAPI(title="Habit API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://habit-tracker-itsc-4155.vercel.app"], #Vercel front-end URL
+    allow_origins=[
+        "https://habit-tracker-itsc-4155.vercel.app"
+    ],  # Vercel front-end URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,7 +91,7 @@ def health():
     return {"status": "ok"}
 
 
-# Authentication Endpoints 
+# Authentication Endpoints
 @app.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user."""

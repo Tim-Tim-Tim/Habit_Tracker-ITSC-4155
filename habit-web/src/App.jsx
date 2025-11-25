@@ -46,7 +46,7 @@ function computeStreakFromLogs(logs) {
 
   let streak = 1;
 
-  // Walk backwards from the most recent date
+  // Walk forwardss from the most recent date
   for (let i = dates.length - 1; i > 0; i--) {
     const diffMs = dates[i] - dates[i - 1];
     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
@@ -87,14 +87,17 @@ export default function App() {
   // Habits we actually render everywhere
   const displayHabits = simHabits || habits;
 
-  // "Today" in the UI. When simHabits is active, we shift back by simDays.
-  const getCurrentSimDateStr = () => {
+  // "Today" in the UI. When simHabits is active, we shift forward by simDays.
+  const getCurrentSimDate = () => {
     const d = new Date();
     if (simHabits) {
-      d.setDate(d.getDate() - simDays);
+      d.setDate(d.getDate() + simDays);
     }
-    return d.toISOString().split("T")[0];
+    return d;
   };
+
+  const getCurrentSimDateStr = () =>
+  getCurrentSimDate().toISOString().split("T")[0];
 
   useEffect(() => {
     if (token) {
@@ -398,13 +401,16 @@ export default function App() {
                   onBack={() => setView("dashboard")}
                   onToggleToday={handleCompleteToday}
                   onDelete={handleDeleteHabit}
+                  currentDateStr={getCurrentSimDateStr()}
                 />
               )}
+
               {view === "profile" && (
                 <ProfileView
                   user={user}
                   habits={displayHabits}
                   onLogout={handleLogout}
+                  currentDateStr={getCurrentSimDateStr()}
                 />
               )}
             </>

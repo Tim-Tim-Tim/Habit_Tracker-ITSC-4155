@@ -1,25 +1,29 @@
 import React from "react";
 import { getLast7Days } from "../utils/dateUtils";
 
-export default function AggregateBarChart({ habits, color }) {
-  const last7 = getLast7Days();
+export default function AggregateBarChart({ habits, color, currentDateStr }) {
+  // Use simulated "today" if provided, otherwise real today
+  const baseDate = currentDateStr ? new Date(currentDateStr) : new Date();
+
+  const last7 = getLast7Days(baseDate);
+
   const data = last7.map((date) =>
     habits.reduce(
-      (acc, h) =>
-        acc + ((h.logs || []).includes(date) ? 1 : 0),
+      (acc, h) => acc + ((h.logs || []).includes(date) ? 1 : 0),
       0
     )
   );
+
   const maxPossible = habits.length || 1;
 
   return (
     <div className="flex items-end justify-between h-full w-full gap-2 px-2">
       {data.map((count, i) => {
         const percentage = (count / maxPossible) * 100;
-        const dayLabel = new Date(last7[i]).toLocaleDateString(
-          "en-US",
-          { weekday: "short" }
-        );
+        const dayLabel = new Date(last7[i]).toLocaleDateString("en-US", {
+          weekday: "short",
+        });
+
         return (
           <div
             key={i}

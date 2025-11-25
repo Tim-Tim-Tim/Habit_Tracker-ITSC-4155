@@ -4,19 +4,26 @@ import { getLast7Days } from "../utils/dateUtils";
 import AggregateBarChart from "./AggregateBarChart";
 import DonutChart from "./DonutChart";
 
-export default function ProfileView({ user, habits, onLogout }) {
+export default function ProfileView({ user, habits, onLogout, currentDateStr }) {
   const totalHabits = habits.length;
   const totalCompletions = habits.reduce(
     (acc, h) => acc + (h.logs || []).length,
     0
   );
-  const last7 = getLast7Days();
+
+  const baseDate = currentDateStr
+    ? new Date(currentDateStr)
+    : new Date();
+
+  const last7 = getLast7Days(baseDate);
+
   const completionsLast7Days = habits.reduce(
     (acc, h) =>
       acc +
       (h.logs || []).filter((d) => last7.includes(d)).length,
     0
   );
+
   const possibleCompletions = totalHabits * 7;
   const globalEfficiency =
     possibleCompletions > 0
@@ -83,9 +90,14 @@ export default function ProfileView({ user, habits, onLogout }) {
             </h3>
           </div>
           <div className="flex-1 pt-4">
-            <AggregateBarChart habits={habits} color="bg-blue-500" />
+            <AggregateBarChart
+              habits={habits}
+              color="bg-blue-500"
+              currentDateStr={currentDateStr}
+            />
           </div>
         </div>
+
         <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center justify-center min-h-[300px] transition-colors">
           <div className="flex items-center gap-2 mb-8 w-full">
             <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-emerald-600 dark:text-emerald-400">

@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import '../index.css';
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");

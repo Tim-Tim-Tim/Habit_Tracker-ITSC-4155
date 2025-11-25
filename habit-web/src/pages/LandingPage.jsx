@@ -1,52 +1,45 @@
-// habit-web/src/pages/LandingPage.jsx
+
 import React from "react";
 import { Link } from "react-router-dom";
 
 export default function LandingPage() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "radial-gradient(1200px 800px at 20% -10%, #1a2028 0%, #0f1216 45%)",
-      color: "var(--text, #e6eaf2)"
-    }}>
-      <div style={{
-        width: "min(800px, 92vw)",
-        textAlign: "center",
-        padding: "48px",
-        borderRadius: "14px",
-        background: "rgba(18,22,27,0.6)",
-        border: "1px solid rgba(35,42,51,0.6)"
-      }}>
-        <h1 style={{ margin: 0, fontSize: "2.1rem", color: "var(--accent, #7cc4ff)" }}>
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(1200px_800px_at_20%_-10%,#1a2028_0%,#0f1216_45%)] text-slate-100">
+      <div className="w-[min(800px,92vw)] text-center px-8 py-12 rounded-[14px] bg-slate-900/70 border border-slate-800/70 shadow-xl">
+        <h1 className="m-0 text-[2.1rem] font-extrabold text-sky-300">
           Habit Tracker
         </h1>
-        <p style={{ color: "var(--muted, #9aa3b2)", marginTop: "12px" }}>
+
+        <p className="mt-3 text-slate-400">
           Track your habits, stay consistent, and build great routines.
         </p>
 
-        <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "28px" }}>
-          <Link to="/login" className="btn btn-primary" aria-label="Sign up">
+        <div className="mt-7 flex justify-center gap-3">
+          <Link
+            to="/app"
+            aria-label="Login"
+            className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30 transition-all active:scale-95"
+          >
             Login
           </Link>
 
-          <Link to="/signup" className="btn" aria-label="Register" style={{ background: "transparent" }}>
+          <Link
+            to="/app"
+            aria-label="Register"
+            className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-semibold border border-slate-600/80 text-slate-200 bg-transparent hover:bg-slate-800/60 transition-all active:scale-95"
+          >
             Register
           </Link>
         </div>
 
-        <div style={{ marginTop: "24px", color: "var(--muted, #9aa3b2)", textAlign: "center" }}>
+        <div className="mt-6 text-slate-400 text-sm text-center">
           <small>Don't have an account? Use the Register button.</small>
         </div>
-        <footer className="site-footer">
-        <div className="container footer-inner">
+
+        <footer className="mt-8 border-t border-slate-800 pt-4 text-xs text-slate-500 text-center">
           <p>© 2025 TJ, Nathaniel, Ryan, Mohamed, Sweta</p>
-        </div>
-      </footer>
+        </footer>
       </div>
     </div>
-    
   );
 }

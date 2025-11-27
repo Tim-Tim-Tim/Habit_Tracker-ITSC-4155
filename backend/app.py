@@ -1,25 +1,13 @@
 from domain import HabitTracker
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
 import datetime
-from datetime import timedelta
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from pydantic import BaseModel
+from typing import List
 
 from database import engine, Base, get_db
 import models
-
-from auth import (
-    get_password_hash,
-    authenticate_user,
-    create_access_token,
-    get_current_active_user,
-    get_user_by_username,
-    get_user_by_email,
-    ACCESS_TOKEN_EXPIRE_MINUTES,
-)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -28,13 +16,7 @@ app = FastAPI(title="Habit API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://habit-tracker-itsc-4155.vercel.app", # Vercel front-end URL
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-    ],
+    allow_origins=["*"],  # change later for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,29 +25,7 @@ app.add_middleware(
 tracker = HabitTracker()
 
 
-# Pydantic schemas
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-
-class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: str
-    is_active: bool
-    created_at: datetime.datetime
-
-    class Config:
-        from_attributes = True
-
-
+# Pydantic schemas for request/response
 class HabitCreate(BaseModel):
     name: str
 
@@ -88,80 +48,36 @@ class HabitResponse(BaseModel):
 
 @app.get("/")
 def root():
+    """
+    Root endpoint.
+    
+    Returns:
+        dict: A simple message indicating the API is running.
+    """
     return {"message": "Habit API up. See /docs"}
-
 
 @app.get("/health")
 def health():
+    """
+    Health check endpoint.
+    
+    Returns:
+        dict: Status of the API.
+    """
     return {"status": "ok"}
 
-
-# Authentication Endpoints
-@app.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user."""
-    # Check if username already exists
-    if get_user_by_username(db, user.username):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered",
-        )
-
-    # Check if email already exists
-    if get_user_by_email(db, user.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
-        )
-
-    # Create new user with hashed password
-    hashed_password = get_password_hash(user.password)
-    db_user = models.User(
-        username=user.username, email=user.email, hashed_password=hashed_password
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-
-    return db_user
-
-
-@app.post("/token", response_model=Token)
-def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
-):
-    """Login endpoint - returns JWT token."""
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.get("/users/me", response_model=UserResponse)
-def read_users_me(current_user: models.User = Depends(get_current_active_user)):
-    """Get current user information."""
-    return current_user
-
-
-# Habit Endpoints (require authentication)
 @app.get("/habits", response_model=List[HabitResponse])
-def list_habits(
-    current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
-):
-    """List all habits for the current user."""
-    habits = (
-        db.query(models.Habit).filter(models.Habit.user_id == current_user.id).all()
-    )
-
+def list_habits(db: Session = Depends(get_db)):
+    """
+    List all habits.
+    
+    Args:
+        db (Session): Database session injected by FastAPI Depends.
+    
+    Returns:
+        List[HabitResponse]: A list of all habits with their logs and streaks.
+    """
+    habits = db.query(models.Habit).all()
     result = []
     for habit in habits:
         result.append(
@@ -171,31 +87,28 @@ def list_habits(
                 "logs": [log.completion_date.isoformat() for log in habit.logs],
             }
         )
-
     return result
 
-
 @app.post("/habits", response_model=HabitResponse)
-def create_habit(
-    habit: HabitCreate,
-    current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
-):
-    """Create a new habit for the current user."""
-    # Check if habit already exists for this user
-    existing = (
-        db.query(models.Habit)
-        .filter(
-            models.Habit.name == habit.name, models.Habit.user_id == current_user.id
-        )
-        .first()
-    )
-
+def create_habit(habit: HabitCreate, db: Session = Depends(get_db)):
+    """
+    Create a new habit.
+    
+    Args:
+        habit (HabitCreate): The habit data from the request body.
+        db (Session): Database session.
+    
+    Raises:
+        HTTPException: If the habit already exists (409).
+    
+    Returns:
+        HabitResponse: The newly created habit with empty logs and streak 0.
+    """
+    existing = db.query(models.Habit).filter(models.Habit.name == habit.name).first()
     if existing:
         raise HTTPException(status_code=409, detail="Habit already exists")
 
-    # Create new habit
-    new_habit = models.Habit(name=habit.name, user_id=current_user.id, streak=0)
+    new_habit = models.Habit(name=habit.name, streak=0)
     db.add(new_habit)
     db.commit()
     db.refresh(new_habit)
@@ -204,19 +117,22 @@ def create_habit(
 
 
 @app.post("/habits/{name}/complete", response_model=HabitResponse)
-def complete_habit(
-    name: str,
-    current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
-):
-    """Mark a habit as complete for today."""
-    # Find habit for current user
-    habit = (
-        db.query(models.Habit)
-        .filter(models.Habit.name == name, models.Habit.user_id == current_user.id)
-        .first()
-    )
+def complete_habit(name: str, db: Session = Depends(get_db)):
+    """
+    Mark a habit as completed for today.
 
+    Args:
+        name (str): The name of the habit to complete.
+        db (Session): Database session.
+
+    Raises:
+        HTTPException: If the habit does not exist (404).
+
+    Returns:
+        HabitResponse: Updated habit including new streak and logs.
+    """
+    # Find habit
+    habit = db.query(models.Habit).filter(models.Habit.name == name).first()
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
 
@@ -233,6 +149,7 @@ def complete_habit(
     )
 
     if existing_log:
+        # Already completed today, just return current state
         return {
             "name": habit.name,
             "streak": habit.streak,
@@ -253,10 +170,13 @@ def complete_habit(
         days_diff = (today - last_log_date).days
 
         if days_diff == 1:
+            # Consecutive day
             habit.streak += 1
         else:
+            # Streak broken, restart
             habit.streak = 1
     else:
+        # First log ever
         habit.streak = 1
 
     # Create new log
@@ -273,18 +193,21 @@ def complete_habit(
 
 
 @app.delete("/habits/{name}")
-def delete_habit(
-    name: str,
-    current_user: models.User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
-):
-    """Delete a habit for the current user."""
-    habit = (
-        db.query(models.Habit)
-        .filter(models.Habit.name == name, models.Habit.user_id == current_user.id)
-        .first()
-    )
+def delete_habit(name: str, db: Session = Depends(get_db)):
+    """
+    Delete a habit by name.
 
+    Args:
+        name (str): The name of the habit to delete.
+        db (Session): Database session.
+
+    Raises:
+        HTTPException: If the habit does not exist (404).
+
+    Returns:
+        dict: {"ok": True} on successful deletion.
+    """
+    habit = db.query(models.Habit).filter(models.Habit.name == name).first()
     if not habit:
         raise HTTPException(status_code=404, detail="Habit not found")
 
